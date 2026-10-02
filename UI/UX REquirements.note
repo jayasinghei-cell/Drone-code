@@ -1,0 +1,21 @@
+1. Real-Time Video Stream & Overlay
+ Low-Latency Video Player: Live HD video feed with latency controls (under 500 ms ideal) and stream quality toggles (720p/1080p).
+ Bounding Box Overlay: Visual bounding boxes around detected marine life with species label, confidence percentage (e.g., "Whale 94%"), and dynamic color-coding by category (e.g., green for mammals, yellow for turtles).
+ Telemetry HUD: Fixed head-up display showing critical flight metrics:
+ Drone Altitude (m), Speed (m/s), Heading (Yaw), Gimbal Pitch Angle.
+ Current GPS position (Lat/Lon) and Battery % / Estimated Remaining Flight Time.
+2. Map & Spatial Tracking
+ Split/Side Panel Interactive Map: Integrated GIS map (OpenStreetMap/Mapbox) showing real-time drone track and target positions.
+ Georeferenced Sightings: Real-time pins dropped automatically on the map corresponding to calculated target GPS coordinates.
+ Geofencing & Search Grid: Visual overlay of pre-planned flight paths, survey coverage areas, and operational boundaries.
+3. Sighting Log & Alerts
+ Live Sighting Feed: Scrollable sidebar list showing recent detections sorted chronologically.
+ Quick Verification: One-click confirmation/rejection actions for operators to manually validate AI detections (Human-in-the-Loop).
+ Threshold Alerts: Audio/visual pop-up alerts for high-priority targets (e.g., endangered species or shark proximity to swimmer zones).
+4. Usability & Environmental Requirements
+ High-Contrast Outdoor Mode: Dark and high-contrast light themes designed for outdoor field operation under direct sunlight (tablet/laptop screens).
+ Offline-First Resilience: Visual indicators for connection health (RTSP video stream, MAVLink telemetry, local logging state). Ability to cache logs locally when disconnected from cellular networks.
+ Touch & Keyboard Friendly: Large touch-friendly control targets (minimum 48×48 px) for field tablets, alongside quick keyboard shortcuts for desktop operators (e.g., ⁠Space⁠ to log manually, ⁠Esc⁠ to clear alert).
+5. Data Export & Analytics Review
+ Playback & Replay Mode: Post-flight video scrubber synchronized with GPS map playback for reviewing past survey missions.
+ Export Controls: One-click export of session data to CSV, GeoJSON, or PDF summary reports for research and compliance logging
