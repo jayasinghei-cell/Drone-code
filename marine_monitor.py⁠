@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+import csv
+import math
+import os
+import sys
+import time
+from datetime import datetime
+
+import cv2
+import numpy as np
+
+
+class MarineLifeDroneMonitor:
+    def __init__(self, log_file="marine_sightings.csv"):
+        self.log_file = log_file
+        self.init_logger()
+
+    def init_logger(self):
+        """Initialize the CSV log file for recording sightings if it doesn't exist."""
+        if not os.path.exists(self.log_file):
+            with open(self.log_file, mode="w", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(
+                    [
+                        "Timestamp",
+                        "Species",
+                        "Confidence",
+                        "Drone_Lat",
+                        "Drone_Lon",
+                        "Drone_Alt_m",
+                        "Target_Lat",
+                        "Target_Lon",
+                    ]
+                )
+
+    def calculate_target_gps(
+        self,
+        drone_lat,
+        drone_lon,
+        altitude,
+        pitch_deg,
+        yaw_deg,
+        bbox_center_x,
+        bbox_center_y,
+        frame_width,
+        frame_height,
+    ):
+        """Estimates the GPS coordinates of a detected target based on drone telemetry."""
+        pitch_rad = math.radians(abs(pitch_deg))
+        yaw_rad = math.radians(yaw_deg)
+
+        # Ground distance calculation
+        ground_distance = (
+            altitude * math.tan(pitch_rad) if pitch_rad != 0 else altitude
+        )
+        earth_radius = 6378137.0  # Earth radius in meters
+
+        d_north = ground_distance * math.cos(yaw_rad)
+        d_east = ground_distance * math.sin(yaw_rad)
+
+        target_lat = drone_lat + (d_north / earth_radius) * (180 / math.pi)
+        target_lon = drone_lon + (d_east / (earth_radius * math.cos(math.radians(drone_lat)))) * (180 / math.pi)
+
+        return round(target_lat, 6), round(target_lon, 6)
+
+    def log_sighting(self, species, confidence, drone_telemetry, target_coords):
+        """Logs detected species and coordinates to file."""
+        timestamp = datetime.now().isoformat()
+        target_lat, target_lon = target_coords
+
+        with open(self.log_file, mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(
+                [
+                    timestamp,
+                    species,
+                    f"{confidence:.2f}",
+                    drone_telemetry["lat"],
+                    drone_telemetry["lon"],
+                    drone_telemetry["alt"],
+                    target_lat,
+                    target_lon,
+                ]
+            )
+
+        print(
+            f"[{timestamp}] DETECTED: {species} ({confidence*100:.1f}%) at Lat: {target_lat}, Lon: {target_lon}"
+        )
+
+    def process_frame(self, frame, drone_telemetry):
+        """Processes a single video frame for marine life detection."""
+        h, w, _ = frame.shape
+
+        # Mock detection payload (Replace with YOLO model inference)
+        mock_detections = [
+            {
+                "species": "Sea Turtle",
+                "confidence": 0.92,
+                "bbox": [
+                    int(w * 0.4),
+                    int(h * 0.4),
+                    int(w * 0.5),
+                    int(h * 0.5),
+                ],
+            }
+        ]
+
+        for det in mock_detections:
+            species = det["species"]
+            conf = det["confidence"]
+            x1, y1, x2, y2 = det["bbox"]
+            center_x = (x1 + x2) / 2
+            center_y = (y1 + y2) / 2
+
+            target_gps = self.calculate_target_gps(
+                drone_telemetry["lat"],
+                drone_telemetry["lon"],
+                drone_telemetry["alt"],
+                drone_telemetry["pitch"],
+                drone_telemetry["yaw"],
+                center_x,
+                center_y,
+                w,
+                h,
+            )
+
+            # Visual annotations
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                f"{species} {conf*100:.0f}%",
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
+            )
+
+            self.log_sighting(species, conf, drone_telemetry, target_gps)
+
+        return frame
+
+
+if __name__ == "__main__":
+    monitor = MarineLifeDroneMonitor()
+
+    mock_telemetry = {
+        "lat": -33.868820,
+        "lon": 151.209290,
+        "alt": 15.0,
+        "pitch": 45.0,
+        "yaw": 180.0,
+    }
+
+    dummy_frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+    monitor.process_frame(dummy_frame, mock_telemetry)
+    print("\n[SUCCESS] Script executed. Check 'marine_sightings.csv'.")
